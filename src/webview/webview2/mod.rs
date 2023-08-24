@@ -126,7 +126,7 @@ impl InnerWebView {
           options
         };
         let locale_lang = match get_locale() {
-          Some(v) => format!("--accept-lang={},", v),
+          Some(v) => format!("--accept-lang={} ", v),
           None => "".to_string(),
         };
         let _ = options.SetAdditionalBrowserArguments(PCWSTR::from_raw(
