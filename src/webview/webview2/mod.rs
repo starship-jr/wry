@@ -10,12 +10,12 @@ use crate::{
 };
 
 use file_drop::FileDropController;
-use url::Url;
-use sys_locale::get_locale;
 use std::{
   collections::HashSet, fmt::Write, iter::once, mem::MaybeUninit, os::windows::prelude::OsStrExt,
   path::PathBuf, rc::Rc, sync::mpsc, sync::Arc,
 };
+use sys_locale::get_locale;
+use url::Url;
 
 use once_cell::unsync::OnceCell;
 
@@ -125,28 +125,26 @@ impl InnerWebView {
             .map_err(webview2_com::Error::WindowsError)?;
           options
         };
-        let locale = get_locale();
+        let locale_lang = match get_locale() {
+          Some(v) => format!("--accept-lang={},", v),
+          None => "".to_string(),
+        };
         let _ = options.SetAdditionalBrowserArguments(PCWSTR::from_raw(
           encode_wide(pl_attrs.additional_browser_args.unwrap_or_else(|| {
             // remove "mini menu" - See https://github.com/tauri-apps/wry/issues/535
             // and "smart screen" - See https://github.com/tauri-apps/tauri/issues/1345
             format!(
-              "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection{}{}",
+              "{}--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection{}",
+              locale_lang,
               if autoplay {
                 " --autoplay-policy=no-user-gesture-required"
               } else {
                 ""
-              },
-              if locale.is_some(){
-                format!("--accept-lang={}",locale.unwrap())
-              } else {
-                "".to_string()
-              },
+              }
             )
           }))
           .as_ptr(),
         ));
-        
 
         if let Some(data_directory) = data_directory {
           CreateCoreWebView2EnvironmentWithOptions(
